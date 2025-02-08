@@ -14,25 +14,26 @@ const ViewAds: React.FC = () => {
           console.error('Aucun token trouvé, utilisateur non authentifié.');
           return;
         }
-
+  
         const response = await axios.get('http://localhost:3000/owner/ads', {
           headers: { Authorization: `Bearer ${token}` },
         });
-
+  
+        console.log("📢 Annonces récupérées:", response.data); // ✅ Debugging
         if (response.data.length === 0) {
-          navigate('/owner/no-ads'); // Redirige vers la page "Aucune annonce trouvée"
+          navigate('/owner/no-ads');
         } else {
           setAds(response.data);
         }
       } catch (error) {
         console.error('Erreur lors de la récupération des annonces:', error);
-        navigate('/owner/no-ads'); // Redirige si une erreur empêche le chargement des annonces
+        navigate('/owner/no-ads');
       }
     };
-
+  
     fetchAds();
   }, [navigate]);
-
+  
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4 text-center">Mes annonces en ligne</h1>

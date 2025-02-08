@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Typography, Input } from "@material-tailwind/react";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate,Link } from 'react-router-dom';
 import logoEasyReno from '../images/easyreno.jpg';
 
 type ViewState = 'main' | 'login' | 'choice';
@@ -58,12 +58,13 @@ function HomePage(): JSX.Element {
 
       {currentView === 'main' && (
         <div className="w-full max-w-md space-y-6">
+          <Link to="/login">
           <Button 
-            onClick={() => setCurrentView('login')} 
             className="w-full py-3 bg-orange-500 text-white hover:bg-orange-600 transition-all duration-300 shadow-md hover:shadow-lg text-lg"
           >
             Me connecter
           </Button>
+          </Link>
           <Button 
             onClick={() => setCurrentView('choice')} 
             className="w-full py-3 bg-yellow-500 text-white hover:bg-yellow-600 transition-all duration-300 shadow-md hover:shadow-lg text-lg"

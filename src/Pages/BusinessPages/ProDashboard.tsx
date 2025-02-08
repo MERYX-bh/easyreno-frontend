@@ -4,30 +4,71 @@ import { Card, Button, Typography } from "@material-tailwind/react";
 import { EyeIcon, BriefcaseIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
 
+interface Announcement {
+    id: number;
+    title: string;
+    status?: string;
+}
+
+interface Chantier {
+    id: number;
+    title: string;
+    status: string;
+    progress: number;
+    estimatedEndDate?: string;
+    companyName: string;
+}
+
 const ProDashboard: React.FC = () => {
     const navigate = useNavigate();
-    const [ads, setAds] = useState([]);
+    const [ads, setAds] = useState<Announcement[]>([]);
+    const [ongoingProjects, setOngoingProjects] = useState<Chantier[]>([]);
+    const [completedProjects, setCompletedProjects] = useState<Chantier[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        const fetchAds = async () => {
+        const fetchData = async () => {
             try {
                 const token = localStorage.getItem('token');
                 if (!token) {
-                    console.error("Aucun token trouvé, utilisateur non authentifié.");
+                    setError("Vous devez être connecté.");
+                    setLoading(false);
                     return;
                 }
 
-                const response = await axios.get('http://localhost:3000/business/ads', {
+                // 🔥 Récupérer les annonces disponibles
+                const adsResponse = await axios.get('http://localhost:3000/business/ads', {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
-                setAds(response.data);
-            } catch (error) {
-                console.error('Erreur lors de la récupération des annonces:', error);
+                // ✅ Filtrer les annonces pour exclure celles qui ont un devis accepté
+                const filteredAds = adsResponse.data.filter((ad: any) =>
+                    !ad.quotes.some((quote: any) => quote.status === "accepted")
+                );
+
+                setAds(filteredAds);
+
+                // 🔥 Récupérer les chantiers
+                const chantiersResponse = await axios.get('http://localhost:3000/business/chantiers', {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+
+                // ✅ Séparer les chantiers en cours et terminés
+                const ongoing = chantiersResponse.data.filter((chantier: any) => chantier.status !== "terminé");
+                const completed = chantiersResponse.data.filter((chantier: any) => chantier.status === "terminé");
+
+                setOngoingProjects(ongoing);
+                setCompletedProjects(completed);
+            } catch (error: any) {
+                console.error('❌ Erreur lors du chargement des données:', error.response?.data || error.message);
+                setError("Erreur lors du chargement des données.");
+            } finally {
+                setLoading(false);
             }
         };
 
-        fetchAds();
+        fetchData();
     }, []);
 
     const handleViewDetails = (id: number) => {
@@ -38,27 +79,6 @@ const ProDashboard: React.FC = () => {
         navigate(`/business/construction/${id}`);
     };
 
-    const ongoingProjects = [
-        { id: 1, title: "Rénovation cuisine M. Dupont", progress: 60 },
-    ];
-
-    const completedProjects = [
-        { 
-            id: 101, 
-            title: "Réfection salle de bain M. Bernard",
-            date: "15/07/2024",
-            description: "Rénovation complète avec installation d'une douche à l'italienne et double vasque",
-            cost: "9 680 €"
-        },
-        { 
-            id: 102, 
-            title: "Installation domotique Mme Dubois",
-            date: "22/06/2024",
-            description: "Mise en place d'un système domotique complet pour la gestion de l'éclairage, du chauffage et de la sécurité",
-            cost: "8 760 €"
-        }
-    ];
-
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-200 to-orange-200 p-6">
             <div className="max-w-7xl mx-auto">
@@ -66,70 +86,58 @@ const ProDashboard: React.FC = () => {
                     Tableau de bord Pro
                 </Typography>
 
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    
-                    {/* Annonces dynamiques du backend */}
-                    <Card className="p-4 shadow-lg rounded-lg bg-white">
-                        <Typography variant="h5" color="blue-gray" className="flex items-center mb-4">
-                            <EyeIcon className="h-6 w-6 mr-2 text-blue-600" /> Annonces récentes
-                        </Typography>
-                        {ads.length > 0 ? (
-                            ads.map((ad: any) => (
-                                <div key={ad.id} className="mb-4 flex justify-between items-center p-3 bg-gray-100 rounded-lg shadow-sm">
-                                    <div>
-                                        <Typography variant="paragraph">{ad.title}</Typography>
-                                        <span className={`inline-block mt-1 px-2 py-1 text-xs font-semibold ${ad.status === 'Urgent' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'} rounded-full`}>
-                                            {ad.status || "En attente"}
-                                        </span>
+                {loading ? (
+                    <Typography className="text-center text-gray-600">Chargement...</Typography>
+                ) : error ? (
+                    <Typography className="text-center text-red-500">{error}</Typography>
+                ) : (
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        
+                        {/* ✅ Annonces dynamiques du backend */}
+                        <Card className="p-4 shadow-lg rounded-lg bg-white">
+                            <Typography variant="h5" color="blue-gray" className="flex items-center mb-4">
+                                <EyeIcon className="h-6 w-6 mr-2 text-blue-600" /> Annonces récentes
+                            </Typography>
+                            {ads.length > 0 ? (
+                                ads.map((ad) => (
+                                    <div key={ad.id} className="mb-4 flex justify-between items-center p-3 bg-gray-100 rounded-lg shadow-sm">
+                                        <div>
+                                            <Typography variant="paragraph">{ad.title}</Typography>
+                                            <span className="inline-block mt-1 px-2 py-1 text-xs font-semibold bg-green-500 text-white rounded-full">
+                                                {ad.status || "En attente"}
+                                            </span>
+                                        </div>
+                                        <Button color="blue" size="sm" onClick={() => handleViewDetails(ad.id)}>Voir</Button>
                                     </div>
-                                    <Button color="blue" size="sm" onClick={() => handleViewDetails(ad.id)}>Voir</Button>
-                                </div>
-                            ))
-                        ) : (
-                            <Typography variant="paragraph" color="gray">Aucune annonce disponible.</Typography>
-                        )}
-                    </Card>
+                                ))
+                            ) : (
+                                <Typography variant="paragraph" color="gray">Aucune annonce disponible.</Typography>
+                            )}
+                        </Card>
 
-                    {/* Chantiers en cours */}
-                    <Card className="p-4 shadow-lg rounded-lg bg-white">
-                        <Typography variant="h5" color="blue-gray" className="flex items-center mb-4">
-                            <BriefcaseIcon className="h-6 w-6 mr-2 text-blue-600" /> Chantiers en cours
-                        </Typography>
-                        {ongoingProjects.length > 0 ? (
-                            ongoingProjects.map(project => (
-                                <div key={project.id} className="mb-4 p-3 bg-gray-100 rounded-lg shadow-sm flex justify-between items-center">
-                                    <span>{project.title}</span>
-                                    <Button color="blue" size="sm" onClick={() => handleViewConstructionInfo(project.id)}>Détails</Button>
-                                    <div className="relative w-full h-2 bg-gray-300 rounded-full mx-2">
-                                        <div className={`absolute h-full bg-blue-600 rounded-full`} style={{ width: `${project.progress}%` }}></div>
+                        {/* ✅ Chantiers en cours */}
+                        <Card className="p-4 shadow-lg rounded-lg bg-white">
+                            <Typography variant="h5" color="blue-gray" className="flex items-center mb-4">
+                                <BriefcaseIcon className="h-6 w-6 mr-2 text-blue-600" /> Mes Chantiers
+                            </Typography>
+                            {ongoingProjects.length > 0 ? (
+                                ongoingProjects.map(project => (
+                                    <div key={project.id} className="mb-4 p-3 bg-gray-100 rounded-lg shadow-sm flex justify-between items-center">
+                                        <span>{project.title}</span>
+                                        <Button color="blue" size="sm" onClick={() => handleViewConstructionInfo(project.id)}>Détails</Button>
+                                        <div className="relative w-full h-2 bg-gray-300 rounded-full mx-2">
+                                            <div className="absolute h-full bg-blue-600 rounded-full" style={{ width: `${project.progress}%` }}></div>
+                                        </div>
+                                        <span>{project.progress}%</span>
                                     </div>
-                                    <span>{project.progress}%</span>
-                                </div>
-                            ))
-                        ) : (
-                            <Typography variant="paragraph" color="gray">Vous n'avez pas de chantiers en cours</Typography>
-                        )}
-                    </Card>
-
-                    {/* Chantiers terminés */}
-                    <Card className="p-4 shadow-lg rounded-lg bg-white">
-                        <Typography variant="h5" color="blue-gray" className="flex items-center mb-4">
-                            <CheckCircleIcon className="h-6 w-6 mr-2 text-blue-600" /> Chantiers terminés
-                        </Typography>
-                        {completedProjects.length > 0 ? (
-                            completedProjects.map(project => (
-                                <div key={project.id} className="mb-4 p-3 bg-gray-100 rounded-lg shadow-sm">
-                                    <Typography variant="h6" color="blue-gray">{project.title}</Typography>
-                                    <Typography variant="small" color="gray">Terminé le : {project.date}</Typography>
-                                    <Typography variant="paragraph" className="mt-2">{project.description}</Typography>
-                                    <Typography variant="lead" color="green" className="mt-2 font-medium">Coût total : {project.cost}</Typography>
-                                </div>
-                            ))
-                        ) : (
-                            <Typography variant="paragraph" color="gray">Vous n'avez pas de chantiers terminés</Typography>
-                        )}
-                    </Card>
-                </div>
+                                ))
+                            ) : (
+                                <Typography variant="paragraph" color="gray">Aucun chantier en cours</Typography>
+                            )}
+                        </Card>
+                        
+                    </div>
+                )}
             </div>
         </div>
     );

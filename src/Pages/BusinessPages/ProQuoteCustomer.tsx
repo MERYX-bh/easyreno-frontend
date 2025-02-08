@@ -15,22 +15,28 @@ function Customer() {
                     setError("Aucun token trouvé, veuillez vous reconnecter.");
                     return;
                 }
-
+    
                 const response = await axios.get('http://localhost:3000/business/my-quotes', {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
+                    headers: { Authorization: `Bearer ${token}` }
                 });
-
-                setDevisList(response.data);
+    
+                console.log("🔍 Réponse API :", response.data);
+                
+                if (Array.isArray(response.data)) {
+                    setDevisList(response.data);
+                } else {
+                    setDevisList([]); // Assurez-vous que ce soit un tableau
+                }
+    
             } catch (err) {
                 setError("Erreur lors de la récupération des devis.");
                 console.error("Erreur:", err);
             }
         };
-
+    
         fetchDevis();
     }, []);
+    
 
     const handleViewDetails = (id: number) => {
         setShowDetails(showDetails === id ? null : id);
@@ -75,7 +81,7 @@ function Customer() {
                 {error && <Typography color="red" className="text-center mb-4">{error}</Typography>}
 
                 <div className="space-y-6">
-                    {devisList.map((devis) => (
+                    {Array.isArray(devisList) && devisList.map((devis) => (
                         <Card key={devis.id} className="mb-6 shadow-lg">
                             <CardBody>
                                 <Typography variant="h4" color="blue-gray" className="mb-2">
@@ -102,16 +108,6 @@ function Customer() {
                                             <span className="font-medium">Prix proposé</span>
                                             <span className="font-bold">{devis.price}€</span>
                                         </div>
-                                        
-                                        <CardFooter className="pt-4">
-                                            <Button 
-                                                color="green" 
-                                                onClick={() => handleDownloadFile(devis)}
-                                                className="w-full"
-                                            >
-                                                Télécharger le PDF
-                                            </Button>
-                                        </CardFooter>
                                     </div>
                                 )}
                             </CardBody>

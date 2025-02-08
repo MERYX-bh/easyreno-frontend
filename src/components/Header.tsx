@@ -28,23 +28,17 @@ function Header() {
     { label: "Mon tableau de bord", link: "/owner/dashboard" },
     { label: "Créer une annonce", link: "/owner/create-ad" },
     { label: "Voir mes annonces en ligne", link: "/owner/view-ads" },
-    { label: "Mon planning", link: "/owner/planning" },
     { label: "Mes chantiers", link: "/owner/projects" },
     { label: "Mes échanges", link: "/owner/exchanges" },
     { label: "Mes devis", link: "/owner/quotes" },
-    { label: "Mes factures", link: "/owner/invoices" },
-    { label: "Historique", link: "/owner/history" },
   ];
 
   const companyMenuItems = [
     { label: "Tableau de bord", link: "/business/pro-dashboard" },
     { label: "Consulter les annonces", link: "/business/pro-view" },
-    { label: "Mon planning", link: "/business/planning" },
     { label: "Mes chantiers", link: "/business/pro-construction-view" },
     { label: "Mes échanges", link: "/business/exchanges" },
     { label: "Mes devis clients", link: "/business/history" },
-    { label: "Mes factures clients", link: "/business/pro-send-quote" },
-    { label: "Historique", link: "/business/pro-history" },
   ];
 
   const menuItems = userType === 'owner' ? ownerMenuItems : companyMenuItems;

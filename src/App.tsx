@@ -71,7 +71,7 @@ function App() {
             <Route path="pro-details/:id" element={<ProDetails />} />
             <Route path="pro-quotes/:adId" element={<ProQuotes />} />
             <Route path="history" element={<Customer />} />
-            <Route path="pro-contacts" element={<ProContacts />} />
+            <Route path="pro-contacts/:id" element={<ProContacts />} />
             <Route path="exchanges" element={<ProExchanges />} />
             <Route path="exchange/:id" element={<ProExchangeDetail />} />
             <Route path="pro-construction-view" element={<ProConstructionView />} />

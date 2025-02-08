@@ -1,24 +1,55 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Typography, Button, Card, CardBody, Input, Textarea } from "@material-tailwind/react";
+import axios from 'axios';
 
 function ProAdd() {
     const { projectId } = useParams<{ projectId: string }>();
     const navigate = useNavigate();
     const [stepTitle, setStepTitle] = useState('');
     const [stepDescription, setStepDescription] = useState('');
-    const [photo, setPhoto] = useState<File | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
 
-    const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (event.target.files && event.target.files[0]) {
-            setPhoto(event.target.files[0]);
+    const handleSubmit = async () => {
+        if (!stepTitle || !stepDescription) {
+            setError("Veuillez remplir tous les champs.");
+            return;
         }
-    };
 
-    const handleSubmit = () => {
-        console.log("Nouvelle étape ajoutée:", { stepTitle, stepDescription, photo });
-        navigate(`/business/construction/${projectId}`);
+        setLoading(true);
+        setError('');
+        setSuccess('');
+
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                setError("Token d'authentification manquant.");
+                setLoading(false);
+                return;
+            }
+
+            const response = await axios.post(
+                `http://localhost:3000/business/chantier/${projectId}/add-step`,
+                {
+                    stepName: stepTitle,
+                    details: [stepDescription],
+                },
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
+
+            console.log("✅ Étape ajoutée :", response.data);
+            setSuccess("Étape ajoutée avec succès !");
+            setTimeout(() => navigate(`/business/construction/${projectId}`), 1500);
+        } catch (error) {
+            console.error("❌ Erreur lors de l'ajout de l'étape :", error);
+            setError("Erreur lors de l'ajout de l'étape.");
+        }
+
+        setLoading(false);
     };
 
     return (
@@ -30,6 +61,9 @@ function ProAdd() {
                 
                 <Card className="w-full max-w-[48rem] mx-auto mb-6">
                     <CardBody>
+                        {error && <Typography color="red" className="mb-4">{error}</Typography>}
+                        {success && <Typography color="green" className="mb-4">{success}</Typography>}
+                        
                         <div className="mb-4">
                             <Typography variant="h6" color="blue-gray" className="mb-2">
                                 Titre de l'étape
@@ -54,30 +88,14 @@ function ProAdd() {
                                 className="bg-white bg-opacity-70"
                             />
                         </div>
-                        
-                        <div className="mb-4">
-                            <Typography variant="h6" color="blue-gray" className="mb-2">
-                                Photo de l'étape
-                            </Typography>
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={handlePhotoChange}
-                                ref={fileInputRef}
-                                className="hidden"
-                            />
-                            <Button
-                                color="blue"
-                                onClick={() => fileInputRef.current?.click()}
-                                className="mr-2"
-                            >
-                                Choisir une photo
-                            </Button>
-                            {photo && <Typography color="gray">{photo.name}</Typography>}
-                        </div>
-                        
-                        <Button color="green" onClick={handleSubmit} className="w-full">
-                            Envoyer
+
+                        <Button 
+                            color="green" 
+                            onClick={handleSubmit} 
+                            className="w-full"
+                            disabled={loading}
+                        >
+                            {loading ? "Envoi en cours..." : "Envoyer"}
                         </Button>
                     </CardBody>
                 </Card>
